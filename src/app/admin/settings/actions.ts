@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAdminAction } from "@/lib/audit-log";
-import type { PricingModel } from "@/lib/database.types";
+import type { PricingModel, PromotionDiscountType } from "@/lib/database.types";
 
 // service_areas grants admin full read+write via RLS too
 // (service_areas_admin_write, "for all using (is_admin(auth.uid()))" in
@@ -242,6 +242,138 @@ export async function updateServiceAreaZips(
   await logAdminAction(supabase, gate.userId, "service_area_updated", "service_area", serviceAreaId, {
     name,
     zip_count: zipCodes.length,
+  });
+
+  revalidatePath("/admin/settings");
+  return {};
+}
+
+// promotions grants admin full read+write via RLS too (promotions_admin_write,
+// "for all using (is_admin(auth.uid()))" in 0011) — same normal per-request
+// client as everything else on this page. The redemption-count/limit
+// enforcement itself lives in the DB (enforce_promotion_limits trigger),
+// not here — this is purely CRUD on the promotion definition.
+
+function toOptionalDateTime(value: FormDataEntryValue | null): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function toOptionalInt(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+export async function createPromotion(formData: FormData): Promise<{ error?: string }> {
+  const gate = await requireAdmin();
+  if (!gate.ok) return { error: "Admin only." };
+
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  const description = String(formData.get("description") ?? "").trim();
+  const discountType = String(formData.get("discount_type") ?? "percent") as PromotionDiscountType;
+  const discountValue = toInt(formData.get("discount_value"));
+  const maxDiscountCents = toOptionalInt(formData.get("max_discount_cents"));
+  const minSubtotalCents = toInt(formData.get("min_subtotal_cents"));
+  const maxRedemptions = toOptionalInt(formData.get("max_redemptions"));
+  const perUserLimit = toInt(formData.get("per_user_limit"), 1);
+  const startsAt = toOptionalDateTime(formData.get("starts_at"));
+  const expiresAt = toOptionalDateTime(formData.get("expires_at"));
+
+  if (!code) return { error: "Code is required." };
+  if (discountValue <= 0) return { error: "Discount value must be greater than zero." };
+  if (discountType === "percent" && discountValue > 100) return { error: "Percent discount can't exceed 100." };
+  if (perUserLimit <= 0) return { error: "Per-user limit must be at least 1." };
+  if (startsAt && expiresAt && startsAt >= expiresAt) return { error: "Start date must be before expiry." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("promotions")
+    .insert({
+      code,
+      description: description || null,
+      discount_type: discountType,
+      discount_value: discountValue,
+      max_discount_cents: maxDiscountCents,
+      min_subtotal_cents: minSubtotalCents,
+      max_redemptions: maxRedemptions,
+      per_user_limit: perUserLimit,
+      starts_at: startsAt,
+      expires_at: expiresAt,
+      created_by: gate.userId,
+    })
+    .select("id")
+    .single();
+  if (error) {
+    if (error.code === "23505") return { error: "A promotion with that code already exists." };
+    return { error: error.message };
+  }
+
+  await logAdminAction(supabase, gate.userId, "promotion_created", "promotion", data?.id ?? null, {
+    code,
+    discount_type: discountType,
+    discount_value: discountValue,
+  });
+
+  revalidatePath("/admin/settings");
+  return {};
+}
+
+export async function togglePromotionActive(promotionId: string, active: boolean): Promise<void> {
+  const gate = await requireAdmin();
+  if (!gate.ok) throw new Error("Admin only.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("promotions").update({ active }).eq("id", promotionId);
+  if (error) throw new Error(error.message);
+
+  await logAdminAction(supabase, gate.userId, "promotion_toggled", "promotion", promotionId, { active });
+
+  revalidatePath("/admin/settings");
+}
+
+// Deliberately does not let discount_type/discount_value be edited after
+// creation — changing what a code is worth out from under redemptions that
+// already happened is a business footgun, not a feature. To change the
+// discount math, deactivate this code and create a new one.
+export async function updatePromotion(promotionId: string, formData: FormData): Promise<{ error?: string }> {
+  const gate = await requireAdmin();
+  if (!gate.ok) return { error: "Admin only." };
+
+  const description = String(formData.get("description") ?? "").trim();
+  const maxDiscountCents = toOptionalInt(formData.get("max_discount_cents"));
+  const minSubtotalCents = toInt(formData.get("min_subtotal_cents"));
+  const maxRedemptions = toOptionalInt(formData.get("max_redemptions"));
+  const perUserLimit = toInt(formData.get("per_user_limit"), 1);
+  const startsAt = toOptionalDateTime(formData.get("starts_at"));
+  const expiresAt = toOptionalDateTime(formData.get("expires_at"));
+
+  if (perUserLimit <= 0) return { error: "Per-user limit must be at least 1." };
+  if (startsAt && expiresAt && startsAt >= expiresAt) return { error: "Start date must be before expiry." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("promotions")
+    .update({
+      description: description || null,
+      max_discount_cents: maxDiscountCents,
+      min_subtotal_cents: minSubtotalCents,
+      max_redemptions: maxRedemptions,
+      per_user_limit: perUserLimit,
+      starts_at: startsAt,
+      expires_at: expiresAt,
+    })
+    .eq("id", promotionId);
+  if (error) return { error: error.message };
+
+  await logAdminAction(supabase, gate.userId, "promotion_updated", "promotion", promotionId, {
+    max_discount_cents: maxDiscountCents,
+    min_subtotal_cents: minSubtotalCents,
+    max_redemptions: maxRedemptions,
+    per_user_limit: perUserLimit,
   });
 
   revalidatePath("/admin/settings");

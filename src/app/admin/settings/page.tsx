@@ -1,27 +1,56 @@
 import { createClient } from "@/lib/supabase/server";
-import { toggleCategoryActive, toggleTaskTypeActive, toggleServiceAreaActive } from "@/app/admin/settings/actions";
+import {
+  toggleCategoryActive,
+  toggleTaskTypeActive,
+  toggleServiceAreaActive,
+  togglePromotionActive,
+} from "@/app/admin/settings/actions";
 import { TaskTypeEditor } from "@/app/admin/settings/TaskTypeEditor";
 import { NewCategoryForm } from "@/app/admin/settings/NewCategoryForm";
 import { NewTaskTypeForm } from "@/app/admin/settings/NewTaskTypeForm";
 import { NewServiceAreaForm } from "@/app/admin/settings/NewServiceAreaForm";
 import { ServiceAreaEditor } from "@/app/admin/settings/ServiceAreaEditor";
+import { NewPromotionForm } from "@/app/admin/settings/NewPromotionForm";
+import { PromotionEditor } from "@/app/admin/settings/PromotionEditor";
 import { formatCents } from "@/lib/pricing";
-import type { Category, TaskType, ServiceArea } from "@/lib/database.types";
+import type { Category, TaskType, ServiceArea, Promotion } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
+
+function formatDiscount(p: Promotion): string {
+  return p.discount_type === "percent"
+    ? `${p.discount_value}% off${p.max_discount_cents ? `, capped at ${formatCents(p.max_discount_cents)}` : ""}`
+    : `${formatCents(p.discount_value)} off`;
+}
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
 
-  const [{ data: categoriesData }, { data: taskTypesData }, { data: serviceAreasData }] = await Promise.all([
+  const [
+    { data: categoriesData },
+    { data: taskTypesData },
+    { data: serviceAreasData },
+    { data: promotionsData },
+    { data: redemptionsData },
+  ] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("task_types").select("*").order("sort_order"),
     supabase.from("service_areas").select("*").order("name"),
+    supabase.from("promotions").select("*").order("created_at", { ascending: false }),
+    supabase.from("promotion_redemptions").select("promotion_id"),
   ]);
 
   const categories = (categoriesData as Category[]) ?? [];
   const taskTypes = (taskTypesData as TaskType[]) ?? [];
   const serviceAreas = (serviceAreasData as ServiceArea[]) ?? [];
+  const promotions = (promotionsData as Promotion[]) ?? [];
+  const redemptionCounts = ((redemptionsData as { promotion_id: string }[]) ?? []).reduce<Record<string, number>>(
+    (acc, r) => {
+      acc[r.promotion_id] = (acc[r.promotion_id] ?? 0) + 1;
+      return acc;
+    },
+    {}
+  );
 
   return (
     <div className="space-y-8">
@@ -139,6 +168,57 @@ export default async function AdminSettingsPage() {
               <ServiceAreaEditor serviceArea={a} />
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-neutral-900">Promotions</h2>
+            <p className="text-sm text-neutral-500">
+              A promo discount comes out of Done&apos;s platform fee — the Doer is always paid their full split, never
+              reduced by a code.
+            </p>
+          </div>
+          <NewPromotionForm />
+        </div>
+        <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
+          {promotions.length === 0 && <p className="p-4 text-sm text-neutral-500">No promotions yet.</p>}
+          {promotions.map((p) => {
+            const used = redemptionCounts[p.id] ?? 0;
+            return (
+              <div key={p.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-neutral-900">
+                      <span className="font-mono">{p.code}</span>
+                      {p.description && <span className="font-normal text-neutral-500"> — {p.description}</span>}
+                    </p>
+                    <p className="text-sm text-neutral-500">
+                      {formatDiscount(p)}
+                      {p.min_subtotal_cents > 0 && ` · min order ${formatCents(p.min_subtotal_cents)}`}
+                      {" · "}
+                      {used} used{p.max_redemptions ? ` / ${p.max_redemptions} max` : ""} · limit {p.per_user_limit}
+                      /Requester
+                      {p.expires_at && ` · expires ${new Date(p.expires_at).toLocaleString()}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <form action={togglePromotionActive.bind(null, p.id, !p.active)}>
+                      <button
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          p.active ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"
+                        }`}
+                      >
+                        {p.active ? "Active" : "Inactive"}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+                <PromotionEditor promotion={p} />
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>
