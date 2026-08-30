@@ -5,6 +5,7 @@ import {
   TERMINAL_STATUSES,
   STATUS_LABELS,
   ACTIVE_TASK_STATUSES,
+  PROMO_LOCKED_STATUSES,
   isStructurallyValid,
   canActorTransition,
   isTerminal,
@@ -169,5 +170,36 @@ describe("ACTIVE_TASK_STATUSES", () => {
   it("together with TERMINAL_STATUSES covers every declared status exactly once", () => {
     const combined = [...ACTIVE_TASK_STATUSES, ...TERMINAL_STATUSES].sort();
     expect(combined).toEqual([...ALL_STATUSES].sort());
+  });
+});
+
+describe("PROMO_LOCKED_STATUSES", () => {
+  it("includes every terminal status — a promo code can never be touched after a task ends", () => {
+    for (const status of TERMINAL_STATUSES) {
+      expect(PROMO_LOCKED_STATUSES).toContain(status);
+    }
+  });
+
+  it("leaves every pre-payment status open to applying/removing a code", () => {
+    const openStatuses: TaskStatus[] = [
+      "requested",
+      "matching",
+      "quoted",
+      "accepted",
+      "scheduled",
+      "en_route",
+      "arrived",
+      "in_progress",
+      "completed",
+    ];
+    for (const status of openStatuses) {
+      expect(PROMO_LOCKED_STATUSES).not.toContain(status);
+    }
+  });
+
+  it("locks the moment payout starts, and for disputed/declined/expired", () => {
+    expect(PROMO_LOCKED_STATUSES).toEqual(
+      expect.arrayContaining(["payout_pending", "disputed", "declined", "expired"])
+    );
   });
 });

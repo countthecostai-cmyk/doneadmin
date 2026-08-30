@@ -144,6 +144,22 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   refunded: "Refunded",
 };
 
+/**
+ * Statuses in which a promo code can no longer be applied or removed —
+ * payment has started or the task ended without payment. Mirrors
+ * tasks_lock_discount() in supabase/migrations/0011_promotions.sql exactly;
+ * change one, change the other in the same commit.
+ */
+export const PROMO_LOCKED_STATUSES: TaskStatus[] = [
+  "payout_pending",
+  "payout_completed",
+  "disputed",
+  "refunded",
+  "cancelled",
+  "declined",
+  "expired",
+];
+
 export const ACTIVE_TASK_STATUSES: TaskStatus[] = [
   "requested",
   "matching",

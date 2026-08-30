@@ -101,6 +101,34 @@ export interface ServiceArea {
   created_at: string;
 }
 
+export type PromotionDiscountType = "percent" | "fixed";
+
+export interface Promotion {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: PromotionDiscountType;
+  discount_value: number;
+  max_discount_cents: number | null;
+  min_subtotal_cents: number;
+  max_redemptions: number | null;
+  per_user_limit: number;
+  active: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface PromotionRedemption {
+  id: string;
+  promotion_id: string;
+  task_id: string;
+  user_id: string;
+  discount_cents: number;
+  created_at: string;
+}
+
 export interface Task {
   id: string;
   requester_id: string;
@@ -119,6 +147,8 @@ export interface Task {
   platform_fee_cents: number;
   doer_payout_cents: number;
   tip_cents: number;
+  promo_code: string | null;
+  discount_cents: number;
   currency: string;
   requires_photo_proof: boolean;
   completion_photo_url: string | null;

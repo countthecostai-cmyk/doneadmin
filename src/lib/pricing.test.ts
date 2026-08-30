@@ -7,6 +7,7 @@ import {
   totalDoerPayoutCents,
   formatChargeBreakdown,
   PLATFORM_FEE_RATE,
+  MIN_CHARGE_CENTS,
   type TaskTypeForPricing,
 } from "./pricing";
 
@@ -181,5 +182,36 @@ describe("formatChargeBreakdown", () => {
 
   it("shows price + tip = total when a tip is present", () => {
     expect(formatChargeBreakdown(5000, 1000)).toBe("$50.00 + $10.00 tip = $60.00");
+  });
+
+  it("shows price - promo = total when only a discount is present", () => {
+    expect(formatChargeBreakdown(5000, 0, "usd", 500)).toBe("$50.00 - $5.00 promo = $45.00");
+  });
+
+  it("shows price - promo + tip = total when both are present", () => {
+    expect(formatChargeBreakdown(5000, 1000, "usd", 500)).toBe(
+      "$50.00 - $5.00 promo + $10.00 tip = $55.00"
+    );
+  });
+});
+
+describe("promo discounts — subtracted from the Requester's charge, never the Doer's payout", () => {
+  it("totalChargeCents subtracts the discount from price + tip", () => {
+    expect(totalChargeCents(5000, 1000, 500)).toBe(5500);
+  });
+
+  it("totalChargeCents floors the charge at Stripe's own minimum, never zero or negative", () => {
+    expect(totalChargeCents(5000, 0, 5000)).toBe(MIN_CHARGE_CENTS);
+    expect(totalChargeCents(100, 0, 10000)).toBe(MIN_CHARGE_CENTS);
+  });
+
+  it("totalChargeCents clamps a negative discount to zero rather than increasing the charge", () => {
+    expect(totalChargeCents(5000, 0, -500)).toBe(5000);
+  });
+
+  it("a discount never touches totalDoerPayoutCents — the Doer is always paid their full split + tip", () => {
+    const { doerPayoutCents } = splitFee(5000); // 4000
+    // Same call as the tip-only test above — discount isn't even a parameter here by design.
+    expect(totalDoerPayoutCents(doerPayoutCents, 1000)).toBe(5000);
   });
 });

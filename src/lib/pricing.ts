@@ -65,15 +65,25 @@ export function formatCents(cents: number, currency = "usd"): string {
 }
 
 /**
- * Total actually charged to the Requester (price + tip). Tip is 100%
- * Doer-owned and never subject to the platform fee split — see
- * 0006_messaging_tips_availability_moderation.sql.
+ * Stripe's own minimum charge amount for a USD Checkout session. A task
+ * discounted close to (or to) zero must never produce a session Stripe
+ * would reject outright — the charge is floored here instead.
  */
-export function totalChargeCents(priceCents: number, tipCents: number): number {
-  return priceCents + Math.max(tipCents, 0);
+export const MIN_CHARGE_CENTS = 50;
+
+/**
+ * Total actually charged to the Requester (price + tip - promo discount).
+ * Tip is 100% Doer-owned and never subject to the platform fee split — see
+ * 0006_messaging_tips_availability_moderation.sql. A promo discount comes
+ * entirely out of the platform's fee, never the Doer's payout — see
+ * 0011_promotions.sql.
+ */
+export function totalChargeCents(priceCents: number, tipCents: number, discountCents = 0): number {
+  const raw = priceCents + Math.max(tipCents, 0) - Math.max(discountCents, 0);
+  return Math.max(raw, MIN_CHARGE_CENTS);
 }
 
-/** What the Doer actually receives for a task: their fee-split payout + 100% of the tip. */
+/** What the Doer actually receives for a task: their fee-split payout + 100% of the tip. Never reduced by a promo discount. */
 export function totalDoerPayoutCents(doerPayoutCents: number, tipCents: number): number {
   return doerPayoutCents + Math.max(tipCents, 0);
 }
@@ -81,11 +91,15 @@ export function totalDoerPayoutCents(doerPayoutCents: number, tipCents: number):
 export function formatChargeBreakdown(
   priceCents: number,
   tipCents: number,
-  currency = "usd"
+  currency = "usd",
+  discountCents = 0
 ): string {
-  if (tipCents <= 0) return formatCents(priceCents, currency);
-  return `${formatCents(priceCents, currency)} + ${formatCents(tipCents, currency)} tip = ${formatCents(
-    totalChargeCents(priceCents, tipCents),
+  if (tipCents <= 0 && discountCents <= 0) return formatCents(priceCents, currency);
+  const parts = [formatCents(priceCents, currency)];
+  if (discountCents > 0) parts.push(`- ${formatCents(discountCents, currency)} promo`);
+  if (tipCents > 0) parts.push(`+ ${formatCents(tipCents, currency)} tip`);
+  return `${parts.join(" ")} = ${formatCents(
+    totalChargeCents(priceCents, tipCents, discountCents),
     currency
   )}`;
 }
