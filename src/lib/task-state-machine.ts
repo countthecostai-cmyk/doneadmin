@@ -155,4 +155,18 @@ export const ACTIVE_TASK_STATUSES: TaskStatus[] = [
   "in_progress",
   "completed",
   "payout_pending",
+  // Every non-terminal status counts as "active" — including these three,
+  // which are easy to forget because they're not on the happy path. A
+  // disputed task in particular is NOT terminal (an admin still has to
+  // resolve it via disputed->payout_pending/refunded/cancelled) and must
+  // stay visible in every "active tasks" view — dashboards, job lists, and
+  // especially the admin job monitor — rather than silently falling into
+  // a "past tasks" bucket where nobody notices it needs attention.
+  // declined/expired are normally momentary (the system requeues them to
+  // "matching" immediately), but they're included on the same principle:
+  // no non-terminal status should be able to fall out of every "active"
+  // view just because nobody thought to list it here.
+  "declined",
+  "expired",
+  "disputed",
 ];
