@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { transitionTask } from "@/lib/task-transitions";
 import { notify } from "@/lib/notify";
+import { logAdminAction } from "@/lib/audit-log";
 import { getStripe } from "@/lib/stripe";
 import { revalidatePath } from "next/cache";
 
@@ -94,6 +95,12 @@ export async function resolveDispute(
     })
     .eq("id", disputeId);
   if (error) throw new Error(error.message);
+
+  await logAdminAction(supabase, user.id, "dispute_resolved", "dispute", disputeId, {
+    resolution,
+    note: note || null,
+    task_id: taskId,
+  });
 
   await notify(task.requester_id, "dispute_resolved", "Dispute resolved", note);
   if (task.doer_id) await notify(task.doer_id, "dispute_resolved", "Dispute resolved", note);

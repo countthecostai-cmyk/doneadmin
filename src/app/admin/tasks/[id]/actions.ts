@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { transitionTask, TransitionConflictError, IllegalTransitionError } from "@/lib/task-transitions";
 import { notify } from "@/lib/notify";
+import { logAdminAction } from "@/lib/audit-log";
 import type { TaskStatus } from "@/lib/task-state-machine";
 import type { Task } from "@/lib/database.types";
 
@@ -55,6 +56,12 @@ export async function adminForceTransition(
       changedByUser: gate.userId,
       note: note || `Admin override: ${from} → ${to}`,
       extraPatch,
+    });
+
+    await logAdminAction(supabase, gate.userId, "task_force_transition", "task", taskId, {
+      from,
+      to,
+      note: note || null,
     });
 
     await notify(updated.requester_id, "admin_task_update", "An admin updated your task", note || undefined);

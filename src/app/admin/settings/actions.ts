@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { logAdminAction } from "@/lib/audit-log";
 import type { PricingModel } from "@/lib/database.types";
 
 // categories/task_types/task_type_addons all grant admin full read+write via
@@ -25,6 +26,8 @@ export async function toggleCategoryActive(categoryId: string, active: boolean):
   const { error } = await supabase.from("categories").update({ active }).eq("id", categoryId);
   if (error) throw new Error(error.message);
 
+  await logAdminAction(supabase, gate.userId, "category_toggled", "category", categoryId, { active });
+
   revalidatePath("/admin/settings");
 }
 
@@ -39,13 +42,19 @@ export async function createCategory(formData: FormData): Promise<{ error?: stri
   if (!slug || !name) return { error: "Slug and name are required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("categories").insert({
-    slug,
-    name,
-    description: description || null,
-    icon: icon || null,
-  });
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({
+      slug,
+      name,
+      description: description || null,
+      icon: icon || null,
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  await logAdminAction(supabase, gate.userId, "category_created", "category", data?.id ?? null, { slug, name });
 
   revalidatePath("/admin/settings");
   return {};
@@ -58,6 +67,8 @@ export async function toggleTaskTypeActive(taskTypeId: string, active: boolean):
   const supabase = await createClient();
   const { error } = await supabase.from("task_types").update({ active }).eq("id", taskTypeId);
   if (error) throw new Error(error.message);
+
+  await logAdminAction(supabase, gate.userId, "task_type_toggled", "task_type", taskTypeId, { active });
 
   revalidatePath("/admin/settings");
 }
@@ -91,6 +102,14 @@ export async function updateTaskTypePricing(
     .eq("id", taskTypeId);
   if (error) return { error: error.message };
 
+  await logAdminAction(supabase, gate.userId, "task_type_pricing_updated", "task_type", taskTypeId, {
+    base_price_cents: basePriceCents,
+    min_price_cents: minPriceCents,
+    price_per_unit_cents: pricePerUnitCents,
+    unit_label: unitLabel,
+    requires_photo_proof: requiresPhotoProof,
+  });
+
   revalidatePath("/admin/settings");
   return {};
 }
@@ -114,19 +133,30 @@ export async function createTaskType(formData: FormData): Promise<{ error?: stri
   if (!categoryId || !slug || !name) return { error: "Category, slug, and name are required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("task_types").insert({
-    category_id: categoryId,
+  const { data, error } = await supabase
+    .from("task_types")
+    .insert({
+      category_id: categoryId,
+      slug,
+      name,
+      description: description || null,
+      pricing_model: pricingModel,
+      base_price_cents: basePriceCents,
+      min_price_cents: minPriceCents,
+      price_per_unit_cents: pricePerUnitCents,
+      unit_label: unitLabel,
+      requires_photo_proof: requiresPhotoProof,
+    })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+
+  await logAdminAction(supabase, gate.userId, "task_type_created", "task_type", data?.id ?? null, {
     slug,
     name,
-    description: description || null,
+    category_id: categoryId,
     pricing_model: pricingModel,
-    base_price_cents: basePriceCents,
-    min_price_cents: minPriceCents,
-    price_per_unit_cents: pricePerUnitCents,
-    unit_label: unitLabel,
-    requires_photo_proof: requiresPhotoProof,
   });
-  if (error) return { error: error.message };
 
   revalidatePath("/admin/settings");
   return {};

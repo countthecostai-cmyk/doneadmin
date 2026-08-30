@@ -12,6 +12,7 @@ const ADMIN_LINKS: { href: string; label: string }[] = [
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/audit-log", label: "Audit Log" },
 ];
 
 export async function Nav() {

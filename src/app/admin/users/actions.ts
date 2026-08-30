@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notify";
+import { logAdminAction } from "@/lib/audit-log";
 
 /**
  * profiles_update_own (0007_admin_profile_rls.sql) now grants
@@ -41,6 +42,15 @@ export async function setUserSuspension(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+
+  await logAdminAction(
+    supabase,
+    gate.userId,
+    suspended ? "user_suspended" : "user_reactivated",
+    "profile",
+    userId,
+    suspended ? { reason: reason || null } : {}
+  );
 
   await notify(
     userId,

@@ -1,5 +1,5 @@
 /**
- * Hand-written types mirroring supabase/migrations/0001-0004. Once a live
+ * Hand-written types mirroring supabase/migrations/0001-0010. Once a live
  * Supabase project is connected, replace/augment this with the output of
  * `generate_typescript_types` — keep this file's shape compatible so the
  * swap is a no-op for callers.
@@ -197,6 +197,16 @@ export interface Message {
   recipient_id: string;
   body: string;
   read_at: string | null;
+  created_at: string;
+}
+
+export interface AdminAuditLogRow {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  detail: Record<string, unknown>;
   created_at: string;
 }
 
