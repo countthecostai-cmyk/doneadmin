@@ -6,6 +6,21 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logAdminAction } from "@/lib/audit-log";
 import type { PricingModel } from "@/lib/database.types";
 
+// service_areas grants admin full read+write via RLS too
+// (service_areas_admin_write, "for all using (is_admin(auth.uid()))" in
+// 0002) — same normal per-request client as categories/task_types above.
+
+function parseZipCodes(raw: FormDataEntryValue | null): string[] {
+  return String(raw ?? "")
+    .split(/[\s,]+/)
+    .map((z) => z.trim())
+    .filter(Boolean);
+}
+
+function invalidZipCodes(zips: string[]): boolean {
+  return zips.some((z) => !/^\d{5}$/.test(z));
+}
+
 // categories/task_types/task_type_addons all grant admin full read+write via
 // RLS ("for all using (is_admin(auth.uid()))" in 0002) — the normal
 // per-request client is enough here, no service-role needed.
@@ -156,6 +171,77 @@ export async function createTaskType(formData: FormData): Promise<{ error?: stri
     name,
     category_id: categoryId,
     pricing_model: pricingModel,
+  });
+
+  revalidatePath("/admin/settings");
+  return {};
+}
+
+export async function createServiceArea(formData: FormData): Promise<{ error?: string }> {
+  const gate = await requireAdmin();
+  if (!gate.ok) return { error: "Admin only." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const zipCodes = parseZipCodes(formData.get("zip_codes"));
+  if (!name) return { error: "Name is required." };
+  if (zipCodes.length === 0) return { error: "Enter at least one ZIP code." };
+  if (invalidZipCodes(zipCodes)) return { error: "ZIP codes must be 5 digits each." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("service_areas")
+    .insert({ name, zip_codes: zipCodes })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+
+  await logAdminAction(supabase, gate.userId, "service_area_created", "service_area", data?.id ?? null, {
+    name,
+    zip_count: zipCodes.length,
+  });
+
+  revalidatePath("/admin/settings");
+  return {};
+}
+
+export async function toggleServiceAreaActive(serviceAreaId: string, active: boolean): Promise<void> {
+  const gate = await requireAdmin();
+  if (!gate.ok) throw new Error("Admin only.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("service_areas").update({ active }).eq("id", serviceAreaId);
+  if (error) throw new Error(error.message);
+
+  await logAdminAction(supabase, gate.userId, "service_area_toggled", "service_area", serviceAreaId, {
+    active,
+  });
+
+  revalidatePath("/admin/settings");
+}
+
+export async function updateServiceAreaZips(
+  serviceAreaId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  const gate = await requireAdmin();
+  if (!gate.ok) return { error: "Admin only." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const zipCodes = parseZipCodes(formData.get("zip_codes"));
+  if (!name) return { error: "Name is required." };
+  if (zipCodes.length === 0) return { error: "Enter at least one ZIP code." };
+  if (invalidZipCodes(zipCodes)) return { error: "ZIP codes must be 5 digits each." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("service_areas")
+    .update({ name, zip_codes: zipCodes })
+    .eq("id", serviceAreaId);
+  if (error) return { error: error.message };
+
+  await logAdminAction(supabase, gate.userId, "service_area_updated", "service_area", serviceAreaId, {
+    name,
+    zip_count: zipCodes.length,
   });
 
   revalidatePath("/admin/settings");
