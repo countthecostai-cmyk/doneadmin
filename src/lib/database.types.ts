@@ -93,6 +93,14 @@ export interface TaskTypeAddon {
   created_at: string;
 }
 
+export interface ServiceArea {
+  id: string;
+  name: string;
+  zip_codes: string[];
+  active: boolean;
+  created_at: string;
+}
+
 export interface Task {
   id: string;
   requester_id: string;
