@@ -154,6 +154,56 @@ export function subscribeToNotifications<T = Record<string, unknown>>(
   });
 }
 
+/** A user's own support tickets list — the Support inbox in Done + Doer. */
+export function subscribeToMySupportTickets<T = Record<string, unknown>>(
+  client: AnyClient,
+  userId: string,
+  onChange: ChangeHandler<T>
+): () => void {
+  return subscribeToTable(client, {
+    table: "support_tickets",
+    filter: `created_by=eq.${userId}`,
+    channelName: `support-tickets:${userId}`,
+    onChange,
+  });
+}
+
+/** One support ticket's row (status/assignment) — the ticket detail page. */
+export function subscribeToSupportTicket<T = Record<string, unknown>>(
+  client: AnyClient,
+  ticketId: string,
+  onChange: ChangeHandler<T>
+): () => void {
+  return subscribeToTable(client, {
+    table: "support_tickets",
+    filter: `id=eq.${ticketId}`,
+    channelName: `support-ticket:${ticketId}`,
+    onChange,
+  });
+}
+
+/** One support ticket's message thread — the ticket detail page in all 3 apps. */
+export function subscribeToSupportTicketMessages<T = Record<string, unknown>>(
+  client: AnyClient,
+  ticketId: string,
+  onChange: ChangeHandler<T>
+): () => void {
+  return subscribeToTable(client, {
+    table: "support_ticket_messages",
+    filter: `ticket_id=eq.${ticketId}`,
+    channelName: `support-ticket-messages:${ticketId}`,
+    onChange,
+  });
+}
+
+/** Admin: every support ticket's live changes, unfiltered — the support queue. RLS already scopes this to admins only. */
+export function subscribeToAllSupportTickets<T = Record<string, unknown>>(
+  client: AnyClient,
+  onChange: ChangeHandler<T>
+): () => void {
+  return subscribeToTable(client, { table: "support_tickets", channelName: "admin-all-support-tickets", onChange });
+}
+
 /** Admin: every task's live changes, unfiltered — the live-jobs monitor. RLS already scopes this to admins only. */
 export function subscribeToAllTasks<T = Record<string, unknown>>(
   client: AnyClient,

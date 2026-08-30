@@ -9,6 +9,7 @@ const ADMIN_LINKS: { href: string; label: string }[] = [
   { href: "/admin/tasks", label: "Live Jobs" },
   { href: "/admin/doers", label: "Doer Apps" },
   { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/support", label: "Support" },
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/settings", label: "Settings" },

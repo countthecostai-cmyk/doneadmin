@@ -34,6 +34,7 @@ export default async function DashboardPage() {
     failedPaymentsCount,
     failedPayoutsCount,
     totalUsersCount,
+    openSupportTicketsCount,
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -47,6 +48,10 @@ export default async function DashboardPage() {
     supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "failed"),
     supabase.from("payouts").select("id", { count: "exact", head: true }).eq("status", "failed"),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["open", "in_progress"]),
   ]);
 
   const tiles = [
@@ -87,6 +92,13 @@ export default async function DashboardPage() {
       href: "/admin/users",
       tone: "border-neutral-200 bg-white",
     },
+    {
+      label: "Open support tickets",
+      value: openSupportTicketsCount.count ?? 0,
+      href: "/admin/support",
+      tone:
+        (openSupportTicketsCount.count ?? 0) > 0 ? "border-amber-200 bg-amber-50" : "border-neutral-200 bg-white",
+    },
   ];
 
   return (
@@ -115,6 +127,7 @@ export default async function DashboardPage() {
         <QuickLink href="/admin/tasks" title="Live jobs monitor" body="Watch every task in real time, filter by status, drill into the timeline." />
         <QuickLink href="/admin/users" title="User management" body="Look up Requesters and Doers, suspend or reactivate accounts." />
         <QuickLink href="/admin/disputes" title="Disputes" body="Resolve open disputes — release, refund, or cancel." />
+        <QuickLink href="/admin/support" title="Support" body="Account, billing, safety, and bug reports from Requesters and Doers." />
         <QuickLink href="/admin/payments" title="Payments & payouts" body="Monitor transactions, and catch failed charges/transfers." />
         <QuickLink href="/admin/analytics" title="Analytics" body="Platform revenue, task volume, and marketplace health." />
         <QuickLink href="/admin/settings" title="Platform settings" body="Categories, task types, and pricing — no code change needed." />

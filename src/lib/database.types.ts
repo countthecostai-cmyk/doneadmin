@@ -1,10 +1,11 @@
 /**
- * Hand-written types mirroring supabase/migrations/0001-0010. Once a live
+ * Hand-written types mirroring supabase/migrations/0001-0012. Once a live
  * Supabase project is connected, replace/augment this with the output of
  * `generate_typescript_types` — keep this file's shape compatible so the
  * swap is a no-op for callers.
  */
 import type { TaskStatus } from "@/lib/task-state-machine";
+import type { SupportTicketCategory, SupportTicketStatus } from "@/lib/support-ticket-state-machine";
 
 export type PricingModel =
   | "flat"
@@ -214,6 +215,40 @@ export interface Review {
   ratee_id: string;
   rating: number;
   comment: string | null;
+  created_at: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  created_by: string;
+  created_by_role: "requester" | "doer";
+  category: SupportTicketCategory;
+  subject: string;
+  status: SupportTicketStatus;
+  related_task_id: string | null;
+  assigned_admin: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface SupportTicketMessage {
+  id: string;
+  ticket_id: string;
+  sender_id: string | null;
+  sender_role: "requester" | "doer" | "admin";
+  body: string;
+  is_internal_note: boolean;
+  created_at: string;
+}
+
+export interface SupportTicketStatusHistoryRow {
+  id: string;
+  ticket_id: string;
+  status: SupportTicketStatus;
+  note: string | null;
+  changed_by_actor: TaskActorDb;
+  changed_by_user: string | null;
   created_at: string;
 }
 
