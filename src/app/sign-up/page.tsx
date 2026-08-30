@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { signIn } from "@/app/auth/actions";
-import { AuthForm } from "@/components/AuthForm";
 
 export const dynamic = "force-dynamic";
 

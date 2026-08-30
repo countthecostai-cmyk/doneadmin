@@ -61,7 +61,13 @@ begin
     raise exception 'invalid or inactive task_type_id';
   end if;
 
-  select coalesce(sum(price_cents), 0) into v_addons_total
+  -- Qualified as task_type_addons.price_cents: this function's OUT parameter
+  -- list (`returns table (price_cents integer, ...)`) declares `price_cents`
+  -- as a PL/pgSQL variable in scope, which collides with the identically
+  -- named column on task_type_addons. An unqualified reference raises
+  -- "column reference is ambiguous" on every call — this was caught by
+  -- running the full migration chain against a real Postgres instance.
+  select coalesce(sum(task_type_addons.price_cents), 0) into v_addons_total
   from task_type_addons
   where id = any(coalesce(p_addon_ids, '{}')) and task_type_id = p_task_type_id and active = true;
 
