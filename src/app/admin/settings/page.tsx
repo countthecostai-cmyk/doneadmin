@@ -1,23 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
-import { toggleCategoryActive, toggleTaskTypeActive } from "@/app/admin/settings/actions";
+import { toggleCategoryActive, toggleTaskTypeActive, toggleServiceAreaActive } from "@/app/admin/settings/actions";
 import { TaskTypeEditor } from "@/app/admin/settings/TaskTypeEditor";
 import { NewCategoryForm } from "@/app/admin/settings/NewCategoryForm";
 import { NewTaskTypeForm } from "@/app/admin/settings/NewTaskTypeForm";
+import { NewServiceAreaForm } from "@/app/admin/settings/NewServiceAreaForm";
+import { ServiceAreaEditor } from "@/app/admin/settings/ServiceAreaEditor";
 import { formatCents } from "@/lib/pricing";
-import type { Category, TaskType } from "@/lib/database.types";
+import type { Category, TaskType, ServiceArea } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
 
-  const [{ data: categoriesData }, { data: taskTypesData }] = await Promise.all([
+  const [{ data: categoriesData }, { data: taskTypesData }, { data: serviceAreasData }] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("task_types").select("*").order("sort_order"),
+    supabase.from("service_areas").select("*").order("name"),
   ]);
 
   const categories = (categoriesData as Category[]) ?? [];
   const taskTypes = (taskTypesData as TaskType[]) ?? [];
+  const serviceAreas = (serviceAreasData as ServiceArea[]) ?? [];
 
   return (
     <div className="space-y-8">
@@ -90,6 +94,49 @@ export default async function AdminSettingsPage() {
                 </div>
               </div>
               <TaskTypeEditor taskType={t} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-neutral-900">Service areas</h2>
+            <p className="text-sm text-neutral-500">
+              {serviceAreas.filter((a) => a.active).length === 0
+                ? "No active service areas configured — task requests are open to every ZIP code until you add one."
+                : "Only ZIP codes covered by an active service area below can request a task."}
+            </p>
+          </div>
+          <NewServiceAreaForm />
+        </div>
+        <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
+          {serviceAreas.length === 0 && (
+            <p className="p-4 text-sm text-neutral-500">No service areas yet.</p>
+          )}
+          {serviceAreas.map((a) => (
+            <div key={a.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-neutral-900">{a.name}</p>
+                  <p className="text-sm text-neutral-500">
+                    {a.zip_codes.length} ZIP{a.zip_codes.length === 1 ? "" : "s"}: {a.zip_codes.join(", ")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <form action={toggleServiceAreaActive.bind(null, a.id, !a.active)}>
+                    <button
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        a.active ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"
+                      }`}
+                    >
+                      {a.active ? "Active" : "Inactive"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <ServiceAreaEditor serviceArea={a} />
             </div>
           ))}
         </div>
