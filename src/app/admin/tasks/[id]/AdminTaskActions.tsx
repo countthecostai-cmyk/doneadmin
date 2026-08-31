@@ -80,7 +80,7 @@ function TransitionButton({ taskId, from, to }: { taskId: string; from: TaskStat
         placeholder="Note for the status history (optional)"
         className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
       />
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

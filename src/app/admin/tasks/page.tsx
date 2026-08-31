@@ -61,7 +61,7 @@ export default async function AdminLiveJobsPage({
         <p className="mt-1 text-sm text-neutral-500">
           Every task, updating in real time. Filtered server-side to {status === "all" ? "all statuses" : status}.
         </p>
-        {error && <p className="mt-2 text-sm text-red-600">Failed to load tasks: {error.message}</p>}
+        {error && <p role="alert" className="mt-2 text-sm text-red-600">Failed to load tasks: {error.message}</p>}
       </div>
 
       <TaskMonitorClient initialTasks={initialTasks} statusFilter={status} allStatuses={ALL_STATUSES} />

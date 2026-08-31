@@ -65,7 +65,7 @@ export function NewTaskTypeForm({ categories }: { categories: Category[] }) {
         <input type="checkbox" name="requires_photo_proof" defaultChecked />
         Requires completion photo proof
       </label>
-      {state?.error && <p className="col-span-full text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="col-span-full text-sm text-red-600">{state.error}</p>}
       <div className="col-span-full flex gap-2">
         <button
           type="submit"

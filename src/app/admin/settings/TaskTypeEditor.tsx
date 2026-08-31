@@ -43,7 +43,7 @@ export function TaskTypeEditor({ taskType }: { taskType: TaskType }) {
         <input type="checkbox" name="requires_photo_proof" defaultChecked={taskType.requires_photo_proof} />
         Requires completion photo proof
       </label>
-      {state?.error && <p className="col-span-full text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="col-span-full text-sm text-red-600">{state.error}</p>}
       <div className="col-span-full flex gap-2">
         <button
           type="submit"

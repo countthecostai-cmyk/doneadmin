@@ -107,7 +107,7 @@ export default async function AdminUsersPage({
         )}
       </form>
 
-      {error && <p className="text-sm text-red-600">Failed to load users: {error.message}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">Failed to load users: {error.message}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <table className="min-w-full divide-y divide-neutral-200 text-sm">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { SkipLink } from "@/components/SkipLink";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://admin.done.app";
 const title = "Done Admin";
@@ -26,8 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-neutral-50 text-neutral-900 antialiased">
+        <SkipLink />
         <Nav />
-        <main>{children}</main>
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
       </body>
     </html>
   );

@@ -44,7 +44,7 @@ export function ServiceAreaEditor({ serviceArea }: { serviceArea: ServiceArea })
           className="mt-1 w-full rounded-lg border border-neutral-300 px-2 py-1 text-sm"
         />
       </div>
-      {state?.error && <p className="col-span-full text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="col-span-full text-sm text-red-600">{state.error}</p>}
       <div className="col-span-full flex gap-2">
         <button
           type="submit"

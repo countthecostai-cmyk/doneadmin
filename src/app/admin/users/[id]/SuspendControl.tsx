@@ -62,7 +62,7 @@ export function SuspendControl({
         placeholder="Why is this account being suspended?"
         className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
       />
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
       <div className="flex gap-2">
         <button
           type="submit"
