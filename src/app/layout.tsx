@@ -2,10 +2,22 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://admin.done.app";
+const title = "Done Admin";
+const description =
+  "Internal admin console for Done — a local on-demand task marketplace. Manage users, live jobs, disputes, payments, and platform settings.";
+
 export const metadata: Metadata = {
-  title: "Done Admin",
-  description:
-    "Internal admin console for Done — a local on-demand task marketplace. Manage users, live jobs, disputes, payments, and platform settings.",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  // Internal tool only — never indexed, never previewed as a public link.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
 };
 
 export default function RootLayout({
