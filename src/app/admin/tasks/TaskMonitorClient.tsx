@@ -112,8 +112,13 @@ export function TaskMonitorClient({
           placeholder="Filter loaded tasks by title, address, or person…"
           className="w-72 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
         />
-        <span className={`text-xs ${live ? "text-green-600" : "text-neutral-500"}`}>
-          {live ? "● live" : "○ connecting…"}
+        <span
+          role="status"
+          aria-live="polite"
+          className={`flex items-center gap-1 text-xs ${live ? "text-green-600" : "text-neutral-500"}`}
+        >
+          <span aria-hidden="true">{live ? "●" : "○"}</span>
+          {live ? "Live" : "Connecting…"}
         </span>
         <span className="text-xs text-neutral-500">{filtered.length} shown</span>
       </div>
