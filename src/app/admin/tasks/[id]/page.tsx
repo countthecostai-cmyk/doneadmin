@@ -61,7 +61,7 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">{task.task_types?.name ?? task.title}</h1>
           <p className="mt-1 text-sm text-neutral-500">{task.address}</p>
-          <p className="mt-1 text-xs text-neutral-400">id {task.id}</p>
+          <p className="mt-1 text-xs text-neutral-500">id {task.id}</p>
         </div>
         <span className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white">
           {STATUS_LABELS[task.status]}

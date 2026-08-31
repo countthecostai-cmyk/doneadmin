@@ -65,7 +65,7 @@ export default async function AdminUserDetailPage({
             )}
           </div>
           <p className="mt-1 text-sm text-neutral-500">{profile.phone ?? "No phone on file"}</p>
-          <p className="mt-1 text-xs text-neutral-400">
+          <p className="mt-1 text-xs text-neutral-500">
             Joined {new Date(profile.created_at).toLocaleDateString()} · id {profile.id}
           </p>
         </div>

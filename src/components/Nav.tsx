@@ -36,7 +36,7 @@ export async function Nav() {
     <header className="border-b border-neutral-200 bg-white">
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <Link href="/" className="text-lg font-bold tracking-tight text-neutral-900">
-          Done <span className="font-normal text-neutral-400">Admin</span>
+          Done <span className="font-normal text-neutral-500">Admin</span>
         </Link>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {user && profile?.is_admin && (

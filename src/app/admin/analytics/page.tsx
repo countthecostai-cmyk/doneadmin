@@ -105,7 +105,7 @@ export default async function AdminAnalyticsPage() {
               <div key={s} className="flex items-center justify-between border-b border-neutral-100 py-1.5">
                 <span className="text-neutral-600">{STATUS_LABELS[s]}</span>
                 <span className="font-medium text-neutral-900">
-                  {count} <span className="text-xs font-normal text-neutral-400">({pct}%)</span>
+                  {count} <span className="text-xs font-normal text-neutral-500">({pct}%)</span>
                 </span>
               </div>
             );

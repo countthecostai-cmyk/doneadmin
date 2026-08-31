@@ -72,7 +72,7 @@ export default async function AdminSettingsPage() {
             <div key={c.id} className="flex items-center justify-between p-4">
               <div>
                 <p className="font-medium text-neutral-900">
-                  {c.icon} {c.name} <span className="font-normal text-neutral-400">/{c.slug}</span>
+                  {c.icon} {c.name} <span className="font-normal text-neutral-500">/{c.slug}</span>
                 </p>
                 {c.description && <p className="text-sm text-neutral-500">{c.description}</p>}
               </div>
@@ -102,7 +102,7 @@ export default async function AdminSettingsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-medium text-neutral-900">
-                    {t.name} <span className="font-normal text-neutral-400">/{t.slug}</span>
+                    {t.name} <span className="font-normal text-neutral-500">/{t.slug}</span>
                   </p>
                   <p className="text-sm text-neutral-500">
                     {t.pricing_model} · base {formatCents(t.base_price_cents)} · min {formatCents(t.min_price_cents)}

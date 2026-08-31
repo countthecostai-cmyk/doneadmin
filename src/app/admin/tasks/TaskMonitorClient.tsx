@@ -112,10 +112,10 @@ export function TaskMonitorClient({
           placeholder="Filter loaded tasks by title, address, or person…"
           className="w-72 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
         />
-        <span className={`text-xs ${live ? "text-green-600" : "text-neutral-400"}`}>
+        <span className={`text-xs ${live ? "text-green-600" : "text-neutral-500"}`}>
           {live ? "● live" : "○ connecting…"}
         </span>
-        <span className="text-xs text-neutral-400">{filtered.length} shown</span>
+        <span className="text-xs text-neutral-500">{filtered.length} shown</span>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
