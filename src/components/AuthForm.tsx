@@ -33,7 +33,7 @@ export function AuthForm({
             name="full_name"
             type="text"
             required
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-1"
           />
         </div>
       )}
@@ -46,7 +46,7 @@ export function AuthForm({
           name="email"
           type="email"
           required
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-1"
         />
       </div>
       <div>
@@ -59,7 +59,7 @@ export function AuthForm({
           type="password"
           minLength={8}
           required
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-1"
         />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
